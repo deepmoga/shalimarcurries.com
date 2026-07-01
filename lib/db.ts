@@ -1,5 +1,7 @@
 import mysql from "mysql2/promise";
 
+export type SqlValue = string | number | boolean | Date | null;
+
 export const dbConfig = {
   host: process.env.DB_HOST || "127.0.0.1",
   port: Number(process.env.DB_PORT || 3306),
@@ -13,7 +15,7 @@ export async function getDb() {
   return mysql.createConnection(dbConfig);
 }
 
-export async function query<T>(sql: string, params: unknown[] = []) {
+export async function query<T>(sql: string, params: SqlValue[] = []) {
   const connection = await getDb();
   try {
     const [rows] = await connection.execute(sql, params);

@@ -2,6 +2,16 @@ import { randomUUID } from "node:crypto";
 import { getDb, query } from "@/lib/db";
 import type { CheckoutDetails, MenuStore } from "@/lib/menu-types";
 
+function parseJson<T>(value: unknown, fallback: T): T {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+  if (typeof value === "string") {
+    return JSON.parse(value) as T;
+  }
+  return value as T;
+}
+
 export async function readMenuStore(): Promise<MenuStore> {
   const categories = await query<{
     id: string;
@@ -16,15 +26,15 @@ export async function readMenuStore(): Promise<MenuStore> {
     description: string | null;
     price: string | number;
     image: string | null;
-    size_options: string | null;
-    spice_options: string | null;
+    size_options: unknown;
+    spice_options: unknown;
   }>(
     "SELECT id, category_id, name, description, price, image, size_options, spice_options FROM menu_products WHERE is_active = 1 ORDER BY name"
   );
 
   const settings = await query<{
-    suburbs: string | null;
-    time_slots: string | null;
+    suburbs: unknown;
+    time_slots: unknown;
   }>("SELECT suburbs, time_slots FROM delivery_settings ORDER BY id DESC LIMIT 1");
 
   return {
@@ -40,11 +50,11 @@ export async function readMenuStore(): Promise<MenuStore> {
       description: product.description ?? "",
       price: Number(product.price),
       image: product.image || "/images/butter-chicken.webp",
-      sizeOptions: product.size_options ? JSON.parse(product.size_options) : [],
-      spiceOptions: product.spice_options ? JSON.parse(product.spice_options) : []
+      sizeOptions: parseJson(product.size_options, []),
+      spiceOptions: parseJson(product.spice_options, [])
     })),
-    suburbs: settings[0]?.suburbs ? JSON.parse(settings[0].suburbs) : [],
-    timeSlots: settings[0]?.time_slots ? JSON.parse(settings[0].time_slots) : {}
+    suburbs: parseJson(settings[0]?.suburbs, []),
+    timeSlots: parseJson(settings[0]?.time_slots, {})
   };
 }
 
@@ -139,7 +149,7 @@ export async function readOrders() {
     suburb: string | null;
     delivery_time: string | null;
     notes: string | null;
-    items: string;
+    items: unknown;
     total: string | number;
     status: string;
     created_at: Date | string;
@@ -163,7 +173,7 @@ export async function readOrders() {
       time: row.delivery_time ?? "",
       notes: row.notes ?? ""
     },
-    items: JSON.parse(row.items),
+    items: parseJson(row.items, []),
     total: Number(row.total)
   }));
 }
