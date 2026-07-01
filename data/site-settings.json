@@ -1,0 +1,29 @@
+{
+  "branding": {
+    "siteName": "Shalimar Curries",
+    "logo": "/images/logo.png",
+    "footerLogo": "/images/logo.png",
+    "favicon": "/images/favicon.png"
+  },
+  "contact": {
+    "phone": "+61 8 9383 7006",
+    "email": "shalimar338@gmail.com",
+    "address": "338 Cambridge St, Wembley WA 6014, Australia",
+    "facebook": "https://www.facebook.com/p/Shalimar-Curries-Wembley-100063904998418/",
+    "instagram": "https://www.instagram.com/shalimarcurrieswembley/"
+  },
+  "mail": {
+    "enabled": true,
+    "host": "smtp.gmail.com",
+    "port": 465,
+    "secure": true,
+    "username": "gagandeepsngh966@gmail.com",
+    "passwordEnvKey": "GOOGLE_SMTP_APP_PASSWORD",
+    "fromEmail": "gagandeepsngh966@gmail.com",
+    "adminEmail": "rana33994@gmail.com"
+  },
+  "admin": {
+    "email": "rana33994@gmail.com",
+    "passwordHash": "cdb2f44b3fe49e976f7f81eea46d1b64:2030e61362eb68020764fc85fe98410e38c5247b351459f6309e6537edb0ad5fe2a2586e701cb718f1bc0719133aed0f395634430acfe4b6be3fafe7b7cb379a"
+  }
+}

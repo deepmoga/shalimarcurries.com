@@ -1,0 +1,239 @@
+{
+  "categories": [
+    {
+      "id": "breads",
+      "name": "Breads",
+      "sortOrder": 1
+    },
+    {
+      "id": "chicken-dishes",
+      "name": "Chicken Dishes",
+      "sortOrder": 2
+    },
+    {
+      "id": "lamb-dishes",
+      "name": "Lamb Dishes",
+      "sortOrder": 3
+    },
+    {
+      "id": "vegetarian",
+      "name": "Vegetarian",
+      "sortOrder": 4
+    },
+    {
+      "id": "rice",
+      "name": "Rice",
+      "sortOrder": 5
+    },
+    {
+      "id": "desserts",
+      "name": "Desserts",
+      "sortOrder": 6
+    }
+  ],
+  "products": [
+    {
+      "id": "aloo-kulcha",
+      "categoryId": "breads",
+      "name": "Aloo Kulcha",
+      "description": "Naan stuffed with mashed potatoes and spices.",
+      "price": 6.3,
+      "image": "/images/garlic-naan.webp",
+      "sizeOptions": [
+        {
+          "name": "Small",
+          "extra": 0
+        },
+        {
+          "name": "Large",
+          "extra": 2.8
+        }
+      ],
+      "spiceOptions": []
+    },
+    {
+      "id": "butter-naan",
+      "categoryId": "breads",
+      "name": "Butter Naan",
+      "description": "Butter layered naan enriched with yogurt.",
+      "price": 5.6,
+      "image": "/images/garlic-naan.webp",
+      "sizeOptions": [
+        {
+          "name": "Small",
+          "extra": 0
+        },
+        {
+          "name": "Large",
+          "extra": 2.8
+        }
+      ],
+      "spiceOptions": []
+    },
+    {
+      "id": "garlic-naan",
+      "categoryId": "breads",
+      "name": "Garlic Naan",
+      "description": "Naan topped with garlic and coriander.",
+      "price": 5.5,
+      "image": "/images/garlic-naan.webp",
+      "sizeOptions": [],
+      "spiceOptions": []
+    },
+    {
+      "id": "butter-chicken",
+      "categoryId": "chicken-dishes",
+      "name": "Butter Chicken",
+      "description": "Tender chicken cooked in a rich, creamy tomato curry.",
+      "price": 22.9,
+      "image": "/images/butter-chicken.webp",
+      "sizeOptions": [
+        {
+          "name": "Small",
+          "extra": 0
+        },
+        {
+          "name": "Large",
+          "extra": 4
+        }
+      ],
+      "spiceOptions": [
+        "Sweet",
+        "Mild",
+        "Medium",
+        "Hot",
+        "Extra Hot"
+      ]
+    },
+    {
+      "id": "chicken-tikka-masala",
+      "categoryId": "chicken-dishes",
+      "name": "Chicken Tikka Masala",
+      "description": "Tandoori chicken finished in a fragrant masala sauce.",
+      "price": 23.5,
+      "image": "/images/chicken-tikka-masala.webp",
+      "sizeOptions": [
+        {
+          "name": "Small",
+          "extra": 0
+        },
+        {
+          "name": "Large",
+          "extra": 4
+        }
+      ],
+      "spiceOptions": [
+        "Sweet",
+        "Mild",
+        "Medium",
+        "Hot",
+        "Extra Hot"
+      ]
+    },
+    {
+      "id": "lamb-rogan-josh",
+      "categoryId": "lamb-dishes",
+      "name": "Lamb Rogan Josh",
+      "description": "Rich lamb curry cooked with warming Kashmiri-style spices.",
+      "price": 24.9,
+      "image": "/images/lamb-rogan-josh.webp",
+      "sizeOptions": [],
+      "spiceOptions": [
+        "Mild",
+        "Medium",
+        "Hot",
+        "Extra Hot"
+      ]
+    },
+    {
+      "id": "palak-paneer",
+      "categoryId": "vegetarian",
+      "name": "Palak Paneer",
+      "description": "Paneer cooked in a smooth spinach sauce.",
+      "price": 19.9,
+      "image": "/images/palak-paneer.webp",
+      "sizeOptions": [],
+      "spiceOptions": [
+        "Mild",
+        "Medium",
+        "Hot"
+      ]
+    },
+    {
+      "id": "hyderabadi-biryani",
+      "categoryId": "rice",
+      "name": "Hyderabadi Biryani",
+      "description": "Aromatic rice layered with spices and classic Indian flavour.",
+      "price": 21.5,
+      "image": "/images/hyderabadi-biryani.webp",
+      "sizeOptions": [],
+      "spiceOptions": [
+        "Mild",
+        "Medium",
+        "Hot"
+      ]
+    }
+  ],
+  "suburbs": [
+    "Wembley",
+    "Subiaco",
+    "West Leederville",
+    "Floreat"
+  ],
+  "timeSlots": {
+    "Sunday": [
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00",
+      "19:30"
+    ],
+    "Monday": [
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00"
+    ],
+    "Tuesday": [
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00"
+    ],
+    "Wednesday": [
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00"
+    ],
+    "Thursday": [
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00"
+    ],
+    "Friday": [
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00",
+      "19:30",
+      "20:00"
+    ],
+    "Saturday": [
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00",
+      "19:30",
+      "20:00"
+    ]
+  }
+}
