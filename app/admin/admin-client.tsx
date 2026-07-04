@@ -922,7 +922,7 @@ function SettingsPanel({
         <div className="admin-card-header">
           <div>
             <h2>Mail Settings</h2>
-            <p>SMTP password is read from the environment variable, not saved in the database.</p>
+            <p>Mail settings are saved in the database and used directly by the website.</p>
           </div>
           <button
             className="button button-green"
@@ -1005,16 +1005,19 @@ function SettingsPanel({
             />
           </label>
           <label>
-            <span>Password Env Key</span>
+            <span>Gmail App Password</span>
             <input
-              value={settings.mail.passwordEnvKey}
+              type="password"
+              autoComplete="new-password"
+              value={settings.mail.password}
               onChange={(event) =>
                 setSettings({
                   ...settings,
-                  mail: { ...settings.mail, passwordEnvKey: event.target.value }
+                  mail: { ...settings.mail, password: event.target.value }
                 })
               }
             />
+            <small>Paste the Gmail app password here. Spaces are removed automatically for Gmail.</small>
           </label>
           <label>
             <span>From Email</span>

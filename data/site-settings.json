@@ -18,7 +18,7 @@
     "port": 465,
     "secure": true,
     "username": "gagandeepsngh966@gmail.com",
-    "passwordEnvKey": "GOOGLE_SMTP_APP_PASSWORD",
+    "password": "",
     "fromEmail": "gagandeepsngh966@gmail.com",
     "adminEmail": "rana33994@gmail.com"
   },

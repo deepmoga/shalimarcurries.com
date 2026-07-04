@@ -19,11 +19,16 @@ export async function PUT(request: Request) {
     await requireAdmin();
     const body = await request.json();
     const current = await readSiteSettings();
+    const mailPassword = body.mail?.password || body.mail?.passwordEnvKey || current.mail.password || "";
     const next = {
       ...current,
       branding: body.branding,
       contact: body.contact,
-      mail: body.mail,
+      mail: {
+        ...body.mail,
+        password: mailPassword,
+        passwordEnvKey: undefined
+      },
       admin: {
         ...current.admin,
         email: body.admin?.email || current.admin.email

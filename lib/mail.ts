@@ -44,15 +44,24 @@ function formatMailError(error: unknown) {
   return parts.join(" | ");
 }
 
+function normalizeSmtpPassword(password: string, host: string) {
+  if (host.toLowerCase().includes("gmail.com")) {
+    return password.replace(/\s+/g, "");
+  }
+  return password;
+}
+
 function getPassword(settings: SiteSettings) {
-  const password = process.env[settings.mail.passwordEnvKey];
   if (!settings.mail.enabled) {
     throw new Error("Email is disabled in Mail Settings.");
   }
+
+  const password = settings.mail.password?.trim();
   if (!password) {
-    throw new Error(`SMTP password environment variable is missing: ${settings.mail.passwordEnvKey}`);
+    throw new Error("SMTP app password is missing. Add the Gmail app password in Admin > Settings.");
   }
-  return password;
+
+  return normalizeSmtpPassword(password, settings.mail.host);
 }
 
 function createTransport(settings: SiteSettings) {

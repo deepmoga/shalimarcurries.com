@@ -22,7 +22,8 @@ export type SiteSettings = {
     port: number;
     secure: boolean;
     username: string;
-    passwordEnvKey: string;
+    password: string;
+    passwordEnvKey?: string;
     fromEmail: string;
     adminEmail: string;
   };
@@ -35,17 +36,28 @@ export type SiteSettings = {
 const dataDirectory = path.join(process.cwd(), "data");
 const settingsFile = path.join(dataDirectory, "site-settings.json");
 
+function normalizeSettings(settings: SiteSettings): SiteSettings {
+  return {
+    ...settings,
+    mail: {
+      ...settings.mail,
+      password: settings.mail.password || settings.mail.passwordEnvKey || "",
+      passwordEnvKey: undefined
+    }
+  };
+}
+
 export async function readSiteSettings(): Promise<SiteSettings> {
   const rows = await query<{ setting_value: string }>(
     "SELECT setting_value FROM app_settings WHERE setting_key = 'site' LIMIT 1"
   ).catch(async () => []);
 
   if (rows[0]?.setting_value) {
-    return JSON.parse(rows[0].setting_value) as SiteSettings;
+    return normalizeSettings(JSON.parse(rows[0].setting_value) as SiteSettings);
   }
 
   const contents = await readFile(settingsFile, "utf8");
-  return JSON.parse(contents) as SiteSettings;
+  return normalizeSettings(JSON.parse(contents) as SiteSettings);
 }
 
 export async function writeSiteSettings(settings: SiteSettings) {
