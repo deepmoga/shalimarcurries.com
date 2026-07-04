@@ -4,12 +4,16 @@ import { sendReservationEmail } from "@/lib/mail";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function redirectBack(request: Request, status: "sent" | "error") {
+function redirectBack(request: Request, status: "sent" | "error", message = "") {
   const referer = request.headers.get("referer") || "/contact-us";
   const url = new URL(referer, request.url);
   url.searchParams.delete("sent");
   url.searchParams.delete("error");
+  url.searchParams.delete("mailError");
   url.searchParams.set(status === "sent" ? "sent" : "error", "1");
+  if (message) {
+    url.searchParams.set("mailError", message);
+  }
   return NextResponse.redirect(url, 303);
 }
 
@@ -26,12 +30,14 @@ export async function POST(request: Request) {
   };
 
   if (!payload.name || !payload.phone) {
-    return redirectBack(request, "error");
+    return redirectBack(request, "error", "Name and phone are required.");
   }
 
-  await sendReservationEmail(payload).catch((error) => {
-    console.error("Reservation email failed", error);
-  });
+  const mail = await sendReservationEmail(payload);
+  if (!mail.ok) {
+    console.error("Reservation email failed", mail.error);
+    return redirectBack(request, "error", mail.error);
+  }
 
   return redirectBack(request, "sent");
 }

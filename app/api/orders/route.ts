@@ -29,13 +29,15 @@ export async function POST(request: Request) {
     total: cartTotal(body.items)
   });
 
-  await sendOrderEmails({
+  const mail = await sendOrderEmails({
     orderId: order.id,
     details: body.details,
     items: body.items
-  }).catch((error) => {
-    console.error("Order email failed", error);
   });
 
-  return NextResponse.json({ ok: true, order });
+  if (!mail.ok) {
+    console.error("Order email failed", mail.error);
+  }
+
+  return NextResponse.json({ ok: true, order, mail });
 }

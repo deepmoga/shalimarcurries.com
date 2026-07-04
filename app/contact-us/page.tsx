@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default async function ContactPage({
   searchParams
 }: {
-  searchParams?: Promise<{ sent?: string; error?: string }>;
+  searchParams?: Promise<{ sent?: string; error?: string; mailError?: string }>;
 }) {
   const { business } = siteContent;
   const params = await searchParams;
@@ -20,7 +20,7 @@ export default async function ContactPage({
     params?.sent === "1"
       ? "Thank you. Your message has been sent."
       : params?.error === "1"
-        ? "Sorry, we could not send your message. Please call us or try again."
+        ? `Sorry, we could not send your message. ${params.mailError || "Please call us or try again."}`
         : "";
 
   return (

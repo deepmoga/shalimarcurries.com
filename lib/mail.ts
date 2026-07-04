@@ -1,6 +1,12 @@
 import nodemailer from "nodemailer";
 import type { CartItem, CheckoutDetails } from "@/lib/menu-types";
-import { readSiteSettings } from "@/lib/site-settings";
+import { readSiteSettings, type SiteSettings } from "@/lib/site-settings";
+
+type MailResult = {
+  ok: boolean;
+  messageId?: string;
+  error?: string;
+};
 
 function money(value: number) {
   return `$${value.toFixed(2)}`;
@@ -17,6 +23,49 @@ function escapeHtml(value = "") {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function formatMailError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return String(error);
+  }
+
+  const details = error as Error & {
+    code?: string;
+    command?: string;
+    response?: string;
+    responseCode?: number;
+  };
+  const parts = [error.message];
+  if (details.code) parts.push(`code: ${details.code}`);
+  if (details.command) parts.push(`command: ${details.command}`);
+  if (details.responseCode) parts.push(`responseCode: ${details.responseCode}`);
+  if (details.response) parts.push(`response: ${details.response}`);
+  return parts.join(" | ");
+}
+
+function getPassword(settings: SiteSettings) {
+  const password = process.env[settings.mail.passwordEnvKey];
+  if (!settings.mail.enabled) {
+    throw new Error("Email is disabled in Mail Settings.");
+  }
+  if (!password) {
+    throw new Error(`SMTP password environment variable is missing: ${settings.mail.passwordEnvKey}`);
+  }
+  return password;
+}
+
+function createTransport(settings: SiteSettings) {
+  const password = getPassword(settings);
+  return nodemailer.createTransport({
+    host: settings.mail.host,
+    port: settings.mail.port,
+    secure: settings.mail.secure,
+    auth: {
+      user: settings.mail.username,
+      pass: password
+    }
+  });
 }
 
 function renderOrderRows(items: CartItem[]) {
@@ -41,25 +90,8 @@ export async function sendOrderEmails({
   orderId: string;
   details: CheckoutDetails;
   items: CartItem[];
-}) {
+}): Promise<MailResult> {
   const settings = await readSiteSettings();
-  if (!settings.mail.enabled) return;
-
-  const password = process.env[settings.mail.passwordEnvKey];
-  if (!password) {
-    console.warn(`SMTP password env var ${settings.mail.passwordEnvKey} is not set.`);
-    return;
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: settings.mail.host,
-    port: settings.mail.port,
-    secure: settings.mail.secure,
-    auth: {
-      user: settings.mail.username,
-      pass: password
-    }
-  });
 
   const total = orderTotal(items);
   const html = `
@@ -87,12 +119,17 @@ export async function sendOrderEmails({
       ${details.notes ? `<p><strong>Notes:</strong> ${details.notes}</p>` : ""}
     </div>`;
 
-  await transporter.sendMail({
-    from: `"${settings.branding.siteName}" <${settings.mail.fromEmail}>`,
-    to: settings.mail.adminEmail,
-    subject: `New order ${orderId} - ${money(total)}`,
-    html
-  });
+  try {
+    const info = await createTransport(settings).sendMail({
+      from: `"${settings.branding.siteName}" <${settings.mail.fromEmail}>`,
+      to: settings.mail.adminEmail,
+      subject: `New order ${orderId} - ${money(total)}`,
+      html
+    });
+    return { ok: true, messageId: info.messageId };
+  } catch (error) {
+    return { ok: false, error: formatMailError(error) };
+  }
 }
 
 export async function sendReservationEmail({
@@ -111,25 +148,8 @@ export async function sendReservationEmail({
   time?: string;
   people?: string;
   message?: string;
-}) {
+}): Promise<MailResult> {
   const settings = await readSiteSettings();
-  if (!settings.mail.enabled) return;
-
-  const password = process.env[settings.mail.passwordEnvKey];
-  if (!password) {
-    console.warn(`SMTP password env var ${settings.mail.passwordEnvKey} is not set.`);
-    return;
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: settings.mail.host,
-    port: settings.mail.port,
-    secure: settings.mail.secure,
-    auth: {
-      user: settings.mail.username,
-      pass: password
-    }
-  });
 
   const html = `
     <div style="font-family:Arial,sans-serif;color:#14251d">
@@ -143,11 +163,42 @@ export async function sendReservationEmail({
       ${message ? `<p><strong>Message:</strong><br>${escapeHtml(message)}</p>` : ""}
     </div>`;
 
-  await transporter.sendMail({
-    from: `"${settings.branding.siteName}" <${settings.mail.fromEmail}>`,
-    to: settings.mail.adminEmail,
-    replyTo: email || undefined,
-    subject: `New enquiry from ${name}`,
-    html
-  });
+  try {
+    const info = await createTransport(settings).sendMail({
+      from: `"${settings.branding.siteName}" <${settings.mail.fromEmail}>`,
+      to: settings.mail.adminEmail,
+      replyTo: email || undefined,
+      subject: `New enquiry from ${name}`,
+      html
+    });
+    return { ok: true, messageId: info.messageId };
+  } catch (error) {
+    return { ok: false, error: formatMailError(error) };
+  }
+}
+
+export async function sendTestEmail(): Promise<MailResult> {
+  const settings = await readSiteSettings();
+  const html = `
+    <div style="font-family:Arial,sans-serif;color:#14251d">
+      <h2>Shalimar Curries Test Email</h2>
+      <p>This confirms your website SMTP settings can send email.</p>
+      <p><strong>Host:</strong> ${escapeHtml(settings.mail.host)}</p>
+      <p><strong>From:</strong> ${escapeHtml(settings.mail.fromEmail)}</p>
+      <p><strong>To:</strong> ${escapeHtml(settings.mail.adminEmail)}</p>
+    </div>`;
+
+  try {
+    const transporter = createTransport(settings);
+    await transporter.verify();
+    const info = await transporter.sendMail({
+      from: `"${settings.branding.siteName}" <${settings.mail.fromEmail}>`,
+      to: settings.mail.adminEmail,
+      subject: "Shalimar Curries test email",
+      html
+    });
+    return { ok: true, messageId: info.messageId };
+  } catch (error) {
+    return { ok: false, error: formatMailError(error) };
+  }
 }

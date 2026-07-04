@@ -1324,6 +1324,38 @@ h3 {
   font-weight: 900;
 }
 
+.admin-info-box,
+.admin-error-box {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.admin-info-box {
+  border: 1px solid rgba(8, 90, 52, 0.18);
+  background: var(--green-soft);
+  color: var(--green-dark);
+}
+
+.admin-error-box {
+  border: 1px solid rgba(238, 77, 66, 0.28);
+  background: #fff0ee;
+  color: #8f1f18;
+}
+
+.admin-info-box pre,
+.admin-error-box pre {
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
 .admin-grid {
   display: grid;
   grid-template-columns: 0.8fr 1.2fr;

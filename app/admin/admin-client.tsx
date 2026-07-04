@@ -749,6 +749,28 @@ function SettingsPanel({
   ) => Promise<void>;
 }) {
   const [newPassword, setNewPassword] = useState("");
+  const [testMailStatus, setTestMailStatus] = useState("");
+  const [testMailError, setTestMailError] = useState("");
+  const [isTestingMail, setIsTestingMail] = useState(false);
+
+  async function sendTestMail() {
+    setIsTestingMail(true);
+    setTestMailStatus("Saving settings and sending test email...");
+    setTestMailError("");
+
+    await saveSettings(settings, "");
+    const response = await fetch("/api/admin/test-mail", { method: "POST" });
+    const data = (await response.json()) as { ok?: boolean; messageId?: string; error?: string };
+
+    if (response.ok && data.ok) {
+      setTestMailStatus(`Test email sent to ${settings.mail.adminEmail}.`);
+      setTestMailError(data.messageId ? `Message ID: ${data.messageId}` : "");
+    } else {
+      setTestMailStatus("Test email failed.");
+      setTestMailError(data.error || `Request failed with status ${response.status}.`);
+    }
+    setIsTestingMail(false);
+  }
 
   return (
     <section className="admin-stack">
@@ -902,7 +924,21 @@ function SettingsPanel({
             <h2>Mail Settings</h2>
             <p>SMTP password is read from the environment variable, not saved in the database.</p>
           </div>
+          <button
+            className="button button-green"
+            type="button"
+            disabled={isTestingMail}
+            onClick={sendTestMail}
+          >
+            {isTestingMail ? "Sending..." : "Send Test Mail"}
+          </button>
         </div>
+        {testMailStatus ? (
+          <div className={testMailError && testMailStatus.includes("failed") ? "admin-error-box" : "admin-info-box"}>
+            <strong>{testMailStatus}</strong>
+            {testMailError ? <pre>{testMailError}</pre> : null}
+          </div>
+        ) : null}
         <div className="admin-product-form">
           <label>
             <span>Enable Email</span>

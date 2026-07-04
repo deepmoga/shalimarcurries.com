@@ -57,6 +57,9 @@ export default function CheckoutClient() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ details, items })
     });
+    const data = (await response.json().catch(() => null)) as
+      | { mail?: { ok?: boolean; error?: string } }
+      | null;
 
     if (!response.ok) {
       setStatus("Please check the order details and try again.");
@@ -66,7 +69,11 @@ export default function CheckoutClient() {
     window.localStorage.removeItem(cartKey);
     window.localStorage.removeItem(checkoutKey);
     setItems([]);
-    setStatus("Thank you. Your order has been received.");
+    setStatus(
+      data?.mail?.ok === false
+        ? `Your order has been received, but email was not sent: ${data.mail.error}`
+        : "Thank you. Your order has been received."
+    );
   }
 
   return (
