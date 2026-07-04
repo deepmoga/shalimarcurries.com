@@ -158,7 +158,12 @@ export function SiteFooter() {
       </div>
       <div className="container footer-bottom">
         <span>Copyright (c) 2026 Shalimar Curries. All rights reserved.</span>
-        <span>Built with Next.js</span>
+        <span>
+          Made with love by{" "}
+          <a href="https://officialdigitalmarketing.in/" target="_blank" rel="noreferrer">
+            Official Digital Marketing
+          </a>
+        </span>
       </div>
     </footer>
   );

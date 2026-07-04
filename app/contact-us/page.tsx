@@ -9,8 +9,19 @@ export const metadata: Metadata = {
     "Contact Shalimar Curries in Wembley WA for Indian dine-in, takeaway, delivery and table reservations."
 };
 
-export default function ContactPage() {
+export default async function ContactPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ sent?: string; error?: string }>;
+}) {
   const { business } = siteContent;
+  const params = await searchParams;
+  const formStatus =
+    params?.sent === "1"
+      ? "Thank you. Your message has been sent."
+      : params?.error === "1"
+        ? "Sorry, we could not send your message. Please call us or try again."
+        : "";
 
   return (
     <>
@@ -71,6 +82,7 @@ export default function ContactPage() {
               <button className="button button-green full-field" type="submit">
                 Send
               </button>
+              {formStatus ? <p className="form-status">{formStatus}</p> : null}
             </form>
           </div>
         </section>

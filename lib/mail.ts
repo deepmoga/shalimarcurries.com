@@ -10,6 +10,15 @@ function orderTotal(items: CartItem[]) {
   return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 }
 
+function escapeHtml(value = "") {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function renderOrderRows(items: CartItem[]) {
   return items
     .map((item) => {
@@ -82,6 +91,63 @@ export async function sendOrderEmails({
     from: `"${settings.branding.siteName}" <${settings.mail.fromEmail}>`,
     to: settings.mail.adminEmail,
     subject: `New order ${orderId} - ${money(total)}`,
+    html
+  });
+}
+
+export async function sendReservationEmail({
+  name,
+  phone,
+  email,
+  date,
+  time,
+  people,
+  message
+}: {
+  name: string;
+  phone: string;
+  email?: string;
+  date?: string;
+  time?: string;
+  people?: string;
+  message?: string;
+}) {
+  const settings = await readSiteSettings();
+  if (!settings.mail.enabled) return;
+
+  const password = process.env[settings.mail.passwordEnvKey];
+  if (!password) {
+    console.warn(`SMTP password env var ${settings.mail.passwordEnvKey} is not set.`);
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: settings.mail.host,
+    port: settings.mail.port,
+    secure: settings.mail.secure,
+    auth: {
+      user: settings.mail.username,
+      pass: password
+    }
+  });
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;color:#14251d">
+      <h2>New Shalimar Curries Enquiry</h2>
+      <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+      <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
+      ${email ? `<p><strong>Email:</strong> ${escapeHtml(email)}</p>` : ""}
+      ${date ? `<p><strong>Date:</strong> ${escapeHtml(date)}</p>` : ""}
+      ${time ? `<p><strong>Time:</strong> ${escapeHtml(time)}</p>` : ""}
+      ${people ? `<p><strong>Person(s):</strong> ${escapeHtml(people)}</p>` : ""}
+      ${message ? `<p><strong>Message:</strong><br>${escapeHtml(message)}</p>` : ""}
+    </div>`;
+
+  await transporter.sendMail({
+    from: `"${settings.branding.siteName}" <${settings.mail.fromEmail}>`,
+    to: settings.mail.adminEmail,
+    replyTo: email || undefined,
+    subject: `New enquiry from ${name}`,
     html
   });
 }
