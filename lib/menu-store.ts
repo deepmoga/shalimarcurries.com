@@ -109,10 +109,11 @@ export async function createOrder(order: {
   items: unknown[];
   total: number;
 }) {
+  const createdAt = new Date();
   const record = {
     id: randomUUID(),
     status: "new",
-    createdAt: new Date().toISOString(),
+    createdAt: createdAt.toISOString(),
     ...order
   };
   await query(
@@ -132,7 +133,7 @@ export async function createOrder(order: {
       JSON.stringify(order.items),
       order.total,
       record.status,
-      record.createdAt
+      createdAt
     ]
   );
   return record;
