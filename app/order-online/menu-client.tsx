@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { Minus, Plus, ShoppingCart, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Plus, ShoppingCart, X } from "lucide-react";
 import type { CartItem, MenuProduct, MenuStore, OrderMode, SizeOption } from "@/lib/menu-types";
 
 const cartKey = "shalimar-cart";
@@ -28,6 +28,7 @@ export default function MenuClient() {
   const [suburb, setSuburb] = useState("");
   const [time, setTime] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<MenuProduct | null>(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/menu")
@@ -165,24 +166,38 @@ export default function MenuClient() {
             </div>
           </div>
 
-          <aside className="cart-panel">
-            <div className="cart-mode-tabs">
-              <button
-                className={mode === "delivery" ? "active" : ""}
-                type="button"
-                onClick={() => setMode("delivery")}
-              >
-                Delivery
-              </button>
-              <button
-                className={mode === "pickup" ? "active" : ""}
-                type="button"
-                onClick={() => setMode("pickup")}
-              >
-                Pickup
-              </button>
-            </div>
-            {mode === "delivery" ? (
+          <aside className={`cart-panel ${isCartOpen ? "cart-panel-open" : "cart-panel-collapsed"}`}>
+            <button
+              className="mobile-cart-toggle"
+              type="button"
+              onClick={() => setIsCartOpen((open) => !open)}
+              aria-expanded={isCartOpen}
+            >
+              <span>
+                <ShoppingCart size={19} aria-hidden="true" />
+                Cart ({cart.length})
+              </span>
+              <strong>{money(cartTotal(cart))}</strong>
+              {isCartOpen ? <ChevronDown size={18} aria-hidden="true" /> : <ChevronUp size={18} aria-hidden="true" />}
+            </button>
+            <div className="cart-panel-body">
+              <div className="cart-mode-tabs">
+                <button
+                  className={mode === "delivery" ? "active" : ""}
+                  type="button"
+                  onClick={() => setMode("delivery")}
+                >
+                  Delivery
+                </button>
+                <button
+                  className={mode === "pickup" ? "active" : ""}
+                  type="button"
+                  onClick={() => setMode("pickup")}
+                >
+                  Pickup
+                </button>
+              </div>
+              {mode === "delivery" ? (
               <label>
                 <span>Suburb *</span>
                 <select value={suburb} onChange={(event) => setSuburb(event.target.value)}>
@@ -191,54 +206,62 @@ export default function MenuClient() {
                   ))}
                 </select>
               </label>
-            ) : null}
-            <label>
-              <span>{mode === "delivery" ? "Delivery Time *" : "Pickup Time *"}</span>
-              <select value={time} onChange={(event) => setTime(event.target.value)}>
-                <option value="">Select time...</option>
-                {timeSlots.map((slot) => (
-                  <option key={slot}>{slot}</option>
-                ))}
-              </select>
-            </label>
-            <div className="cart-title">
-              <ShoppingCart size={28} aria-hidden="true" />
-              <h2>Your Cart</h2>
-              <span>{cart.length}</span>
-            </div>
-            <div className="cart-items">
-              {cart.length ? (
-                cart.map((item) => (
-                  <div className="cart-item" key={item.id}>
-                    <div>
-                      <strong>{item.name}</strong>
-                      <small>
-                        {item.quantity} x {money(item.price)}
-                        {item.size ? ` | ${item.size.name}` : ""}
-                        {item.spice ? ` | ${item.spice}` : ""}
-                      </small>
+              ) : null}
+              <label>
+                <span>{mode === "delivery" ? "Delivery Time *" : "Pickup Time *"}</span>
+                <select value={time} onChange={(event) => setTime(event.target.value)}>
+                  <option value="">Select time...</option>
+                  {timeSlots.map((slot) => (
+                    <option key={slot}>{slot}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="cart-title">
+                <ShoppingCart size={28} aria-hidden="true" />
+                <h2>Your Cart</h2>
+                <span>{cart.length}</span>
+                <button
+                  className="mobile-cart-close"
+                  type="button"
+                  onClick={() => setIsCartOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+              <div className="cart-items">
+                {cart.length ? (
+                  cart.map((item) => (
+                    <div className="cart-item" key={item.id}>
+                      <div>
+                        <strong>{item.name}</strong>
+                        <small>
+                          {item.quantity} x {money(item.price)}
+                          {item.size ? ` | ${item.size.name}` : ""}
+                          {item.spice ? ` | ${item.spice}` : ""}
+                        </small>
+                      </div>
+                      <button type="button" onClick={() => removeItem(item.id)} aria-label={`Remove ${item.name}`}>
+                        <X size={16} aria-hidden="true" />
+                      </button>
                     </div>
-                    <button type="button" onClick={() => removeItem(item.id)} aria-label={`Remove ${item.name}`}>
-                      <X size={16} aria-hidden="true" />
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p className="empty-cart">Your cart is empty.</p>
-              )}
+                  ))
+                ) : (
+                  <p className="empty-cart">Your cart is empty.</p>
+                )}
+              </div>
+              <div className="cart-total">
+                <span>Total:</span>
+                <strong>{money(cartTotal(cart))}</strong>
+              </div>
+              <button
+                className="button button-green checkout-button"
+                type="button"
+                disabled={!cart.length || !time || (mode === "delivery" && !suburb)}
+                onClick={proceedToCheckout}
+              >
+                Proceed to Checkout
+              </button>
             </div>
-            <div className="cart-total">
-              <span>Total:</span>
-              <strong>{money(cartTotal(cart))}</strong>
-            </div>
-            <button
-              className="button button-green checkout-button"
-              type="button"
-              disabled={!cart.length || !time || (mode === "delivery" && !suburb)}
-              onClick={proceedToCheckout}
-            >
-              Proceed to Checkout
-            </button>
           </aside>
         </div>
       </section>
