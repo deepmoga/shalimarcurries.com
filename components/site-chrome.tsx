@@ -1,15 +1,45 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Camera,
   Mail,
   MapPin,
   Menu,
   Phone,
-  Share2,
   Utensils
 } from "lucide-react";
 import { siteContent } from "@/content/home";
+
+function FacebookIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M14 8.4V6.6c0-.78.18-1.2 1.06-1.2H17V2h-3.02c-3.14 0-4.24 1.55-4.24 4.16V8.4H7.5V12h2.24v10H14V12h2.86l.38-3.6H14Z" />
+    </svg>
+  );
+}
+
+function InstagramIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="2" />
+      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
+      <circle cx="17.25" cy="6.75" r="1.25" fill="currentColor" />
+    </svg>
+  );
+}
 
 export function SiteHeader() {
   const { business, nav } = siteContent;
@@ -28,10 +58,10 @@ export function SiteHeader() {
           </a>
           <div className="topbar-social">
             <a href={business.facebook} aria-label="Facebook">
-              <Share2 size={15} aria-hidden="true" />
+              <FacebookIcon size={15} />
             </a>
             <a href={business.instagram} aria-label="Instagram">
-              <Camera size={15} aria-hidden="true" />
+              <InstagramIcon size={15} />
             </a>
           </div>
         </div>
@@ -112,10 +142,10 @@ export function SiteFooter() {
           </p>
           <div className="footer-social">
             <a href={business.facebook} aria-label="Facebook">
-              <Share2 size={18} aria-hidden="true" />
+              <FacebookIcon size={18} />
             </a>
             <a href={business.instagram} aria-label="Instagram">
-              <Camera size={18} aria-hidden="true" />
+              <InstagramIcon size={18} />
             </a>
           </div>
         </div>
