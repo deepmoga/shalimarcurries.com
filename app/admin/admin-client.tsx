@@ -80,6 +80,8 @@ export default function AdminClient() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [status, setStatus] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [editingCategoryId, setEditingCategoryId] = useState("");
+  const [editingCategoryName, setEditingCategoryName] = useState("");
 
   const selectedProducts = useMemo(() => {
     return store?.products.filter((product) => product.categoryId === selectedCategory) ?? [];
@@ -202,6 +204,29 @@ export default function AdminClient() {
     };
     setStore(nextStore);
     setSelectedCategory(nextCategories[0]?.id ?? "");
+    if (editingCategoryId === id) {
+      setEditingCategoryId("");
+      setEditingCategoryName("");
+    }
+  }
+
+  function startEditCategory(category: MenuStore["categories"][number]) {
+    setEditingCategoryId(category.id);
+    setEditingCategoryName(category.name);
+  }
+
+  function saveCategoryName(id: string) {
+    if (!store) return;
+    const name = editingCategoryName.trim();
+    if (!name) return;
+    setStore({
+      ...store,
+      categories: store.categories.map((category) =>
+        category.id === id ? { ...category, name } : category
+      )
+    });
+    setEditingCategoryId("");
+    setEditingCategoryName("");
   }
 
   async function uploadImage(file: File) {
@@ -362,21 +387,91 @@ export default function AdminClient() {
                 Add Category
               </button>
             </form>
-            <div className="admin-list">
-              {store.categories.map((category) => (
-                <div className="admin-row" key={category.id}>
-                  <button
-                    className={selectedCategory === category.id ? "active" : ""}
-                    type="button"
-                    onClick={() => setSelectedCategory(category.id)}
-                  >
-                    {category.name}
-                  </button>
-                  <button type="button" onClick={() => deleteCategory(category.id)}>
-                    Delete
-                  </button>
-                </div>
-              ))}
+            <div className="admin-table-wrap">
+              <table className="admin-table admin-category-table">
+                <thead>
+                  <tr>
+                    <th>Sort</th>
+                    <th>Category</th>
+                    <th>Products</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {store.categories.map((category) => {
+                    const isEditing = editingCategoryId === category.id;
+                    const productCount = store.products.filter(
+                      (product) => product.categoryId === category.id
+                    ).length;
+
+                    return (
+                      <tr className={selectedCategory === category.id ? "active" : ""} key={category.id}>
+                        <td>{category.sortOrder}</td>
+                        <td>
+                          {isEditing ? (
+                            <input
+                              value={editingCategoryName}
+                              onChange={(event) => setEditingCategoryName(event.target.value)}
+                            />
+                          ) : (
+                            <button
+                              className="admin-text-button"
+                              type="button"
+                              onClick={() => setSelectedCategory(category.id)}
+                            >
+                              {category.name}
+                            </button>
+                          )}
+                          <small>{category.id}</small>
+                        </td>
+                        <td>{productCount}</td>
+                        <td>
+                          <div className="admin-actions">
+                            {isEditing ? (
+                              <>
+                                <button
+                                  className="button button-green"
+                                  type="button"
+                                  onClick={() => saveCategoryName(category.id)}
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  className="button button-light admin-muted-button"
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingCategoryId("");
+                                    setEditingCategoryName("");
+                                  }}
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  className="button button-light admin-muted-button"
+                                  type="button"
+                                  onClick={() => startEditCategory(category)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="button admin-danger-button"
+                                  type="button"
+                                  onClick={() => deleteCategory(category.id)}
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </section>
         ) : null}
@@ -664,6 +759,11 @@ function SettingsPanel({
             <p>Logo, favicon, contact details and social links.</p>
           </div>
         </div>
+        <div className="admin-logo-preview-grid">
+          <AdminImagePreview title="Website logo" src={settings.branding.logo} wide />
+          <AdminImagePreview title="Footer logo" src={settings.branding.footerLogo} wide />
+          <AdminImagePreview title="Favicon" src={settings.branding.favicon} />
+        </div>
         <div className="admin-product-form">
           <label>
             <span>Website Name</span>
@@ -943,5 +1043,29 @@ function SettingsPanel({
         Save Settings
       </button>
     </section>
+  );
+}
+
+function AdminImagePreview({
+  title,
+  src,
+  wide = false
+}: {
+  title: string;
+  src: string;
+  wide?: boolean;
+}) {
+  return (
+    <div className="admin-upload-preview">
+      <span>{title}</span>
+      <Image
+        src={src || "/images/logo.png"}
+        width={wide ? 210 : 54}
+        height={wide ? 58 : 54}
+        alt={title}
+        unoptimized
+      />
+      <small>{src}</small>
+    </div>
   );
 }

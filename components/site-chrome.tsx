@@ -2,8 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Camera,
-  Clock,
-  Gift,
   Mail,
   MapPin,
   Menu,
@@ -99,6 +97,9 @@ export function PageHero({
 
 export function SiteFooter() {
   const { business, nav } = siteContent;
+  const facebookPluginUrl = `https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(
+    business.facebook
+  )}&tabs=timeline&width=360&height=260&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`;
 
   return (
     <footer className="site-footer" id="contact">
@@ -145,16 +146,18 @@ export function SiteFooter() {
             </li>
           </ul>
         </div>
-        <div className="hours-box">
-          <Clock size={22} aria-hidden="true" />
-          <h2>Fresh Daily</h2>
-          <p>Call ahead for current dining, takeaway and delivery times.</p>
-          <Gift size={22} aria-hidden="true" />
-          <p>Event catering and family meals available by request.</p>
+        <div className="facebook-page-card">
+          <iframe
+            title="Shalimar Curries Wembley Facebook page"
+            src={facebookPluginUrl}
+            width="360"
+            height="260"
+            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+          />
         </div>
       </div>
       <div className="container footer-bottom">
-        <span>Copyright © 2026 Shalimar Curries. All rights reserved.</span>
+        <span>Copyright (c) 2026 Shalimar Curries. All rights reserved.</span>
         <span>Built with Next.js</span>
       </div>
     </footer>
