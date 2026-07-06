@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createOrder } from "@/lib/menu-store";
+import { createOrder, readMenuStore } from "@/lib/menu-store";
 import type { CartItem, CheckoutDetails } from "@/lib/menu-types";
 import { sendOrderEmails } from "@/lib/mail";
 import { getRemoteIp, verifyRecaptcha } from "@/lib/recaptcha";
@@ -28,6 +28,18 @@ export async function POST(request: Request) {
   const captcha = await verifyRecaptcha(body.captchaToken ?? "", getRemoteIp(request));
   if (!captcha.ok) {
     return NextResponse.json({ error: captcha.error }, { status: 400 });
+  }
+
+  const menu = await readMenuStore();
+  const selectedMode = body.details.mode;
+  const modeEnabled =
+    (selectedMode === "delivery" && menu.orderOptions.delivery) ||
+    (selectedMode === "pickup" && menu.orderOptions.pickup);
+  if (!modeEnabled) {
+    return NextResponse.json(
+      { error: `${selectedMode === "delivery" ? "Delivery" : "Pickup"} ordering is currently unavailable.` },
+      { status: 400 }
+    );
   }
 
   const order = await createOrder({

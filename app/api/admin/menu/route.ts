@@ -23,7 +23,8 @@ export async function PUT(request: Request) {
       categories: store.categories,
       products: store.products,
       suburbs: store.suburbs,
-      timeSlots: store.timeSlots
+      timeSlots: store.timeSlots,
+      orderOptions: store.orderOptions
     });
 
     return NextResponse.json({ ok: true });

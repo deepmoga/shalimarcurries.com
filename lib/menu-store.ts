@@ -12,6 +12,14 @@ function parseJson<T>(value: unknown, fallback: T): T {
   return value as T;
 }
 
+function normalizeOrderOptions(value: unknown) {
+  const options = parseJson(value, { delivery: true, pickup: true });
+  return {
+    delivery: options.delivery !== false,
+    pickup: options.pickup !== false
+  };
+}
+
 export async function readMenuStore(): Promise<MenuStore> {
   const categories = await query<{
     id: string;
@@ -36,6 +44,9 @@ export async function readMenuStore(): Promise<MenuStore> {
     suburbs: unknown;
     time_slots: unknown;
   }>("SELECT suburbs, time_slots FROM delivery_settings ORDER BY id DESC LIMIT 1");
+  const orderSettings = await query<{ setting_value: unknown }>(
+    "SELECT setting_value FROM app_settings WHERE setting_key = 'order_options' LIMIT 1"
+  ).catch(async () => []);
 
   return {
     categories: categories.map((category) => ({
@@ -54,7 +65,8 @@ export async function readMenuStore(): Promise<MenuStore> {
       spiceOptions: parseJson(product.spice_options, [])
     })),
     suburbs: parseJson(settings[0]?.suburbs, []),
-    timeSlots: parseJson(settings[0]?.time_slots, {})
+    timeSlots: parseJson(settings[0]?.time_slots, {}),
+    orderOptions: normalizeOrderOptions(orderSettings[0]?.setting_value)
   };
 }
 
@@ -94,6 +106,12 @@ export async function writeMenuStore(store: MenuStore) {
     await connection.execute(
       "INSERT INTO delivery_settings (suburbs, time_slots) VALUES (?, ?)",
       [JSON.stringify(store.suburbs), JSON.stringify(store.timeSlots)]
+    );
+    await connection.execute(
+      `INSERT INTO app_settings (setting_key, setting_value)
+       VALUES ('order_options', ?)
+       ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+      [JSON.stringify(store.orderOptions ?? { delivery: true, pickup: true })]
     );
     await connection.commit();
   } catch (error) {

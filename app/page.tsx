@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Script from "next/script";
 import {
   CalendarDays,
   Car,
@@ -13,11 +14,23 @@ import {
 } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { siteContent } from "@/content/home";
+import { recaptchaSiteKey } from "@/lib/recaptcha-config";
 
 const featureIcons = [ChefHat, Car, Leaf, ShieldCheck];
 
-export default function Home() {
+export default async function Home({
+  searchParams
+}: {
+  searchParams?: Promise<{ sent?: string; error?: string; mailError?: string }>;
+}) {
   const { business, hero, intro, dishes, features, booking, banner, reviews } = siteContent;
+  const params = await searchParams;
+  const formStatus =
+    params?.sent === "1"
+      ? "Thank you. Your booking request has been sent."
+      : params?.error === "1"
+        ? `Sorry, we could not send your request. ${params.mailError || "Please call us or try again."}`
+        : "";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -225,10 +238,14 @@ export default function Home() {
                   <span>Message</span>
                   <textarea name="message" placeholder="Message" rows={5} />
                 </label>
+                <div className="captcha-field full-field">
+                  <div className="g-recaptcha" data-sitekey={recaptchaSiteKey} />
+                </div>
                 <button className="button button-green full-field" type="submit">
                   <CalendarDays size={17} aria-hidden="true" />
                   <span>Book a Table</span>
                 </button>
+                {formStatus ? <p className="form-status">{formStatus}</p> : null}
               </form>
             </div>
           </div>
@@ -293,6 +310,7 @@ export default function Home() {
         </section>
       </main>
 
+      <Script src="https://www.google.com/recaptcha/api.js" strategy="afterInteractive" />
       <SiteFooter />
     </>
   );

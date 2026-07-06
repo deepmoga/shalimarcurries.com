@@ -579,8 +579,46 @@ export default function AdminClient() {
             <div className="admin-card-header">
               <div>
                 <h2>Delivery Settings</h2>
-                <p>Manage delivery suburbs and time slots shown on the menu page.</p>
+                <p>Manage order types, delivery suburbs and time slots shown on the menu page.</p>
               </div>
+            </div>
+            <div className="admin-product-form admin-order-options">
+              <label>
+                <span>Delivery Orders</span>
+                <select
+                  value={store.orderOptions.delivery ? "enabled" : "disabled"}
+                  onChange={(event) =>
+                    setStore({
+                      ...store,
+                      orderOptions: {
+                        ...store.orderOptions,
+                        delivery: event.target.value === "enabled"
+                      }
+                    })
+                  }
+                >
+                  <option value="enabled">Enabled</option>
+                  <option value="disabled">Disabled</option>
+                </select>
+              </label>
+              <label>
+                <span>Pickup Orders</span>
+                <select
+                  value={store.orderOptions.pickup ? "enabled" : "disabled"}
+                  onChange={(event) =>
+                    setStore({
+                      ...store,
+                      orderOptions: {
+                        ...store.orderOptions,
+                        pickup: event.target.value === "enabled"
+                      }
+                    })
+                  }
+                >
+                  <option value="enabled">Enabled</option>
+                  <option value="disabled">Disabled</option>
+                </select>
+              </label>
             </div>
             <label className="admin-field">
               <span>Delivery Suburbs</span>

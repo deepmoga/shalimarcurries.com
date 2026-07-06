@@ -997,9 +997,8 @@ h3 {
 
 .product-card {
   display: grid;
-  grid-template-columns: 132px 1fr;
   gap: 16px;
-  min-height: 164px;
+  min-height: 0;
   border: 1px solid #e3e8e5;
   border-radius: 8px;
   padding: 18px;
@@ -1063,7 +1062,7 @@ h3 {
 
 .cart-mode-tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
 }
 
 .cart-title {

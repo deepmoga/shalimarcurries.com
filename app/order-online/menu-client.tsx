@@ -16,6 +16,27 @@ function cartTotal(items: CartItem[]) {
   return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 }
 
+function cartItemCount(items: CartItem[]) {
+  return items.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+function cartLineId(productId: string, sizeName?: string, spice?: string) {
+  return [productId, sizeName || "regular", spice || "no-spice"].join("-");
+}
+
+function normalizeCartItems(items: CartItem[]) {
+  return items.reduce<CartItem[]>((merged, item) => {
+    const id = cartLineId(item.productId, item.size?.name, item.spice);
+    const existing = merged.find((entry) => entry.id === id);
+    if (existing) {
+      existing.quantity += item.quantity;
+    } else {
+      merged.push({ ...item, id });
+    }
+    return merged;
+  }, []);
+}
+
 function todayName() {
   return new Intl.DateTimeFormat("en-AU", { weekday: "long" }).format(new Date());
 }
@@ -37,11 +58,12 @@ export default function MenuClient() {
         setStore(data);
         setActiveCategory(data.categories[0]?.id ?? "");
         setSuburb(data.suburbs[0] ?? "");
+        setMode(data.orderOptions.delivery ? "delivery" : "pickup");
     });
 
     const savedCart = window.localStorage.getItem(cartKey);
     if (savedCart) {
-      queueMicrotask(() => setCart(JSON.parse(savedCart) as CartItem[]));
+      queueMicrotask(() => setCart(normalizeCartItems(JSON.parse(savedCart) as CartItem[])));
     }
   }, []);
 
@@ -54,31 +76,32 @@ export default function MenuClient() {
   }, [activeCategory, store]);
 
   const timeSlots = store?.timeSlots[todayName()] ?? Object.values(store?.timeSlots ?? {})[0] ?? [];
+  const orderOptions = store?.orderOptions ?? { delivery: true, pickup: true };
+  const hasOrderingOption = orderOptions.delivery || orderOptions.pickup;
+  const currentModeAvailable = (mode === "delivery" && orderOptions.delivery) || (mode === "pickup" && orderOptions.pickup);
 
   function addConfiguredProduct(product: MenuProduct, options?: { size?: SizeOption; spice?: string; quantity?: number }) {
     const sizeExtra = options?.size?.extra ?? 0;
     const quantity = options?.quantity ?? 1;
     const linePrice = product.price + sizeExtra;
     setCart((items) => {
-      const id = [
-        product.id,
-        options?.size?.name ?? "regular",
-        options?.spice ?? "no-spice",
-        items.length + 1
-      ].join("-");
+      const id = cartLineId(product.id, options?.size?.name, options?.spice);
+      const existing = items.find((item) => item.id === id);
+      if (existing) {
+        return items.map((item) =>
+          item.id === id ? { ...item, quantity: item.quantity + quantity } : item
+        );
+      }
 
-      return [
-        ...items,
-        {
-          id,
-          productId: product.id,
-          name: product.name,
-          price: linePrice,
-          quantity,
-          size: options?.size,
-          spice: options?.spice
-        }
-      ];
+      return [...items, {
+        id,
+        productId: product.id,
+        name: product.name,
+        price: linePrice,
+        quantity,
+        size: options?.size,
+        spice: options?.spice
+      }];
     });
   }
 
@@ -146,16 +169,9 @@ export default function MenuClient() {
             <div className="product-grid">
               {products.map((product) => (
                 <article className="product-card" key={product.id}>
-                  <Image
-                    src={product.image}
-                    width={180}
-                    height={130}
-                    alt={product.name}
-                    className="product-thumb"
-                  />
                   <div>
                     <h2>{product.name}</h2>
-                    <p>{product.description}</p>
+                    {product.description ? <p>{product.description}</p> : null}
                     <strong>{money(product.price)}</strong>
                   </div>
                   <button className="button button-green" type="button" onClick={() => addProduct(product)}>
@@ -175,29 +191,36 @@ export default function MenuClient() {
             >
               <span>
                 <ShoppingCart size={19} aria-hidden="true" />
-                Cart ({cart.length})
+                Cart ({cartItemCount(cart)})
               </span>
               <strong>{money(cartTotal(cart))}</strong>
               {isCartOpen ? <ChevronDown size={18} aria-hidden="true" /> : <ChevronUp size={18} aria-hidden="true" />}
             </button>
             <div className="cart-panel-body">
               <div className="cart-mode-tabs">
-                <button
-                  className={mode === "delivery" ? "active" : ""}
-                  type="button"
-                  onClick={() => setMode("delivery")}
-                >
-                  Delivery
-                </button>
-                <button
-                  className={mode === "pickup" ? "active" : ""}
-                  type="button"
-                  onClick={() => setMode("pickup")}
-                >
-                  Pickup
-                </button>
+                {orderOptions.delivery ? (
+                  <button
+                    className={mode === "delivery" ? "active" : ""}
+                    type="button"
+                    onClick={() => setMode("delivery")}
+                  >
+                    Delivery
+                  </button>
+                ) : null}
+                {orderOptions.pickup ? (
+                  <button
+                    className={mode === "pickup" ? "active" : ""}
+                    type="button"
+                    onClick={() => setMode("pickup")}
+                  >
+                    Pickup
+                  </button>
+                ) : null}
               </div>
-              {mode === "delivery" ? (
+              {!hasOrderingOption ? (
+                <p className="empty-cart">Online ordering is currently unavailable.</p>
+              ) : null}
+              {mode === "delivery" && orderOptions.delivery ? (
               <label>
                 <span>Suburb *</span>
                 <select value={suburb} onChange={(event) => setSuburb(event.target.value)}>
@@ -219,7 +242,7 @@ export default function MenuClient() {
               <div className="cart-title">
                 <ShoppingCart size={28} aria-hidden="true" />
                 <h2>Your Cart</h2>
-                <span>{cart.length}</span>
+                <span>{cartItemCount(cart)}</span>
                 <button
                   className="mobile-cart-close"
                   type="button"
@@ -256,7 +279,7 @@ export default function MenuClient() {
               <button
                 className="button button-green checkout-button"
                 type="button"
-                disabled={!cart.length || !time || (mode === "delivery" && !suburb)}
+                disabled={!cart.length || !time || !currentModeAvailable || (mode === "delivery" && !suburb)}
                 onClick={proceedToCheckout}
               >
                 Proceed to Checkout

@@ -25,6 +25,10 @@ export type MenuStore = {
   products: MenuProduct[];
   suburbs: string[];
   timeSlots: Record<string, string[]>;
+  orderOptions: {
+    delivery: boolean;
+    pickup: boolean;
+  };
 };
 
 export type CartItem = {
