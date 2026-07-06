@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { PageHero, SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { siteContent } from "@/content/home";
+import { recaptchaSiteKey } from "@/lib/recaptcha-config";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -79,6 +81,9 @@ export default async function ContactPage({
                 <span>Message</span>
                 <textarea name="message" rows={6} placeholder="Message" required />
               </label>
+              <div className="captcha-field full-field">
+                <div className="g-recaptcha" data-sitekey={recaptchaSiteKey} />
+              </div>
               <button className="button button-green full-field" type="submit">
                 Send
               </button>
@@ -94,6 +99,7 @@ export default async function ContactPage({
           />
         </section>
       </main>
+      <Script src="https://www.google.com/recaptcha/api.js" strategy="afterInteractive" />
       <SiteFooter />
     </>
   );

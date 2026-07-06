@@ -6,11 +6,20 @@ import type { CartItem, CheckoutDetails, OrderMode } from "@/lib/menu-types";
 const checkoutKey = "shalimar-checkout";
 const cartKey = "shalimar-cart";
 
+declare global {
+  interface Window {
+    grecaptcha?: {
+      getResponse: () => string;
+      reset: () => void;
+    };
+  }
+}
+
 function money(value: number) {
   return `$${value.toFixed(2)}`;
 }
 
-export default function CheckoutClient() {
+export default function CheckoutClient({ recaptchaSiteKey }: { recaptchaSiteKey: string }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [mode, setMode] = useState<OrderMode>("delivery");
   const [suburb, setSuburb] = useState("");
@@ -41,6 +50,7 @@ export default function CheckoutClient() {
   async function submitOrder(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const captchaToken = window.grecaptcha?.getResponse() || "";
     const details: CheckoutDetails = {
       mode,
       suburb,
@@ -55,19 +65,21 @@ export default function CheckoutClient() {
     const response = await fetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ details, items })
+      body: JSON.stringify({ details, items, captchaToken })
     });
     const data = (await response.json().catch(() => null)) as
-      | { mail?: { ok?: boolean; error?: string } }
+      | { error?: string; mail?: { ok?: boolean; error?: string } }
       | null;
 
     if (!response.ok) {
-      setStatus("Please check the order details and try again.");
+      window.grecaptcha?.reset();
+      setStatus(data?.error || "Please check the order details and try again.");
       return;
     }
 
     window.localStorage.removeItem(cartKey);
     window.localStorage.removeItem(checkoutKey);
+    window.grecaptcha?.reset();
     setItems([]);
     setStatus(
       data?.mail?.ok === false
@@ -108,6 +120,9 @@ export default function CheckoutClient() {
               <span>Order Notes</span>
               <input name="notes" placeholder="Optional" />
             </label>
+            <div className="captcha-field full-field">
+              <div className="g-recaptcha" data-sitekey={recaptchaSiteKey} />
+            </div>
             <button className="button button-green full-field" type="submit" disabled={!items.length}>
               Place Order
             </button>

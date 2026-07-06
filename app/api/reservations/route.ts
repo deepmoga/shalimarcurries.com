@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendReservationEmail } from "@/lib/mail";
+import { getRemoteIp, verifyRecaptcha } from "@/lib/recaptcha";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,6 +32,14 @@ export async function POST(request: Request) {
 
   if (!payload.name || !payload.phone) {
     return redirectBack(request, "error", "Name and phone are required.");
+  }
+
+  const captcha = await verifyRecaptcha(
+    String(form.get("g-recaptcha-response") ?? ""),
+    getRemoteIp(request)
+  );
+  if (!captcha.ok) {
+    return redirectBack(request, "error", captcha.error);
   }
 
   const mail = await sendReservationEmail(payload);

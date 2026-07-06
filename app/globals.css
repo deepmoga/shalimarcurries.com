@@ -877,6 +877,11 @@ h3 {
   color: var(--green-dark);
 }
 
+.captcha-field {
+  min-height: 78px;
+  overflow: hidden;
+}
+
 .contact-form label,
 .checkout-form label,
 .cart-panel label,
