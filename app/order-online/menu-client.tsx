@@ -37,6 +37,17 @@ function normalizeCartItems(items: CartItem[]) {
   }, []);
 }
 
+function spiceOptionsFor(product: MenuProduct) {
+  if (!product.spiceOptions.length) {
+    return [];
+  }
+  const options = ["Normal", ...product.spiceOptions];
+  return options.filter((option, index) => {
+    const key = option.toLowerCase();
+    return option && options.findIndex((item) => item.toLowerCase() === key) === index;
+  });
+}
+
 function todayName() {
   return new Intl.DateTimeFormat("en-AU", { weekday: "long" }).format(new Date());
 }
@@ -313,9 +324,20 @@ function ProductOptionsModal({
   onClose: () => void;
 }) {
   const [size, setSize] = useState<SizeOption | undefined>(product.sizeOptions[0]);
-  const [spice, setSpice] = useState(product.spiceOptions[0] ?? "");
+  const spiceOptions = spiceOptionsFor(product);
+  const [spice, setSpice] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [error, setError] = useState("");
   const total = (product.price + (size?.extra ?? 0)) * quantity;
+  const needsSpice = spiceOptions.length > 0;
+
+  function addToCart() {
+    if (needsSpice && !spice) {
+      setError("Please select a spice option.");
+      return;
+    }
+    onAdd({ size, spice: spice || undefined, quantity });
+  }
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={product.name}>
@@ -342,11 +364,19 @@ function ProductOptionsModal({
             </select>
           </label>
         ) : null}
-        {product.spiceOptions.length ? (
+        {needsSpice ? (
           <label>
             <span>Spice</span>
-            <select value={spice} onChange={(event) => setSpice(event.target.value)}>
-              {product.spiceOptions.map((option) => (
+            <select
+              required
+              value={spice}
+              onChange={(event) => {
+                setSpice(event.target.value);
+                setError("");
+              }}
+            >
+              <option value="">Select...</option>
+              {spiceOptions.map((option) => (
                 <option key={option}>{option}</option>
               ))}
             </select>
@@ -365,10 +395,11 @@ function ProductOptionsModal({
           </div>
         </div>
         <div className="modal-total">Total: {money(total)}</div>
+        {error ? <p className="form-status modal-error">{error}</p> : null}
         <button
           className="button button-green modal-add"
           type="button"
-          onClick={() => onAdd({ size, spice: spice || undefined, quantity })}
+          onClick={addToCart}
         >
           Add to Cart
         </button>

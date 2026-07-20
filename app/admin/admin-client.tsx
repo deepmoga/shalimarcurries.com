@@ -44,6 +44,16 @@ type AdminOrder = {
   total: number;
 };
 
+type ProductFormState = {
+  categoryId: string;
+  name: string;
+  price: string;
+  image: string;
+  description: string;
+  sizeOptions: string;
+  spiceOptions: string;
+};
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -71,6 +81,18 @@ function money(value: number) {
   return `$${value.toFixed(2)}`;
 }
 
+function productToFormState(product: MenuProduct): ProductFormState {
+  return {
+    categoryId: product.categoryId,
+    name: product.name,
+    price: String(product.price),
+    image: product.image,
+    description: product.description,
+    sizeOptions: sizeOptionsToText(product.sizeOptions),
+    spiceOptions: product.spiceOptions.join(", ")
+  };
+}
+
 export default function AdminClient() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [loginStatus, setLoginStatus] = useState("");
@@ -82,6 +104,8 @@ export default function AdminClient() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [editingCategoryId, setEditingCategoryId] = useState("");
   const [editingCategoryName, setEditingCategoryName] = useState("");
+  const [editingProductId, setEditingProductId] = useState("");
+  const [editingProduct, setEditingProduct] = useState<ProductFormState | null>(null);
 
   const selectedProducts = useMemo(() => {
     return store?.products.filter((product) => product.categoryId === selectedCategory) ?? [];
@@ -266,6 +290,52 @@ export default function AdminClient() {
   function deleteProduct(id: string) {
     if (!store) return;
     setStore({ ...store, products: store.products.filter((product) => product.id !== id) });
+    if (editingProductId === id) {
+      setEditingProductId("");
+      setEditingProduct(null);
+    }
+  }
+
+  function startEditProduct(product: MenuProduct) {
+    setEditingProductId(product.id);
+    setEditingProduct(productToFormState(product));
+  }
+
+  function updateEditingProduct(updates: Partial<ProductFormState>) {
+    if (!editingProduct) return;
+    setEditingProduct({ ...editingProduct, ...updates });
+  }
+
+  async function saveEditedProduct(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!store || !editingProduct || !editingProductId) return;
+    const form = new FormData(event.currentTarget);
+    const file = form.get("image");
+    const uploadedImage = file instanceof File && file.size ? await uploadImage(file) : "";
+    const nextImage = uploadedImage || editingProduct.image || "/images/butter-chicken.webp";
+    const nextProduct: MenuProduct = {
+      id: editingProductId,
+      categoryId: editingProduct.categoryId,
+      name: editingProduct.name.trim(),
+      description: editingProduct.description,
+      price: Number(editingProduct.price) || 0,
+      image: nextImage,
+      sizeOptions: parseSizeOptions(editingProduct.sizeOptions),
+      spiceOptions: editingProduct.spiceOptions
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+    };
+
+    setStore({
+      ...store,
+      products: store.products.map((product) =>
+        product.id === editingProductId ? nextProduct : product
+      )
+    });
+    setSelectedCategory(nextProduct.categoryId);
+    setEditingProductId("");
+    setEditingProduct(null);
   }
 
   async function uploadSettingImage(
@@ -547,6 +617,91 @@ export default function AdminClient() {
                   ))}
                 </select>
               </div>
+              {editingProduct ? (
+                <form className="admin-product-form admin-edit-product-form" onSubmit={saveEditedProduct}>
+                  <label>
+                    <span>Category</span>
+                    <select
+                      value={editingProduct.categoryId}
+                      onChange={(event) => updateEditingProduct({ categoryId: event.target.value })}
+                    >
+                      {store.categories.map((category) => (
+                        <option value={category.id} key={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Product Name</span>
+                    <input
+                      value={editingProduct.name}
+                      onChange={(event) => updateEditingProduct({ name: event.target.value })}
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span>Price</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editingProduct.price}
+                      onChange={(event) => updateEditingProduct({ price: event.target.value })}
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span>Replace Image</span>
+                    <input name="image" type="file" accept="image/*" />
+                  </label>
+                  <label className="full-field">
+                    <span>Image URL</span>
+                    <input
+                      value={editingProduct.image}
+                      onChange={(event) => updateEditingProduct({ image: event.target.value })}
+                    />
+                  </label>
+                  <label className="full-field">
+                    <span>Description</span>
+                    <textarea
+                      rows={3}
+                      value={editingProduct.description}
+                      onChange={(event) => updateEditingProduct({ description: event.target.value })}
+                    />
+                  </label>
+                  <label className="full-field">
+                    <span>Size Options</span>
+                    <input
+                      value={editingProduct.sizeOptions}
+                      onChange={(event) => updateEditingProduct({ sizeOptions: event.target.value })}
+                    />
+                    <small>Example: Small:0, Large:2.80 means Large adds $2.80.</small>
+                  </label>
+                  <label className="full-field">
+                    <span>Spice Options</span>
+                    <input
+                      value={editingProduct.spiceOptions}
+                      onChange={(event) => updateEditingProduct({ spiceOptions: event.target.value })}
+                    />
+                    <small>Normal is always shown automatically on the order popup.</small>
+                  </label>
+                  <div className="admin-actions full-field">
+                    <button className="button button-green" type="submit">
+                      Save Product
+                    </button>
+                    <button
+                      className="button button-light admin-muted-button"
+                      type="button"
+                      onClick={() => {
+                        setEditingProductId("");
+                        setEditingProduct(null);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : null}
               <div className="admin-products">
                 {selectedProducts.map((product) => (
                   <article key={product.id}>
@@ -564,9 +719,14 @@ export default function AdminClient() {
                           : ""}
                       </small>
                     </div>
-                    <button type="button" onClick={() => deleteProduct(product.id)}>
-                      Delete
-                    </button>
+                    <div className="admin-product-actions">
+                      <button type="button" onClick={() => startEditProduct(product)}>
+                        Edit
+                      </button>
+                      <button type="button" onClick={() => deleteProduct(product.id)}>
+                        Delete
+                      </button>
+                    </div>
                   </article>
                 ))}
               </div>

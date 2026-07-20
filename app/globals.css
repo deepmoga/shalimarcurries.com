@@ -997,6 +997,7 @@ h3 {
 
 .product-card {
   display: grid;
+  grid-template-rows: 1fr auto;
   gap: 16px;
   min-height: 0;
   border: 1px solid #e3e8e5;
@@ -1004,6 +1005,12 @@ h3 {
   padding: 18px;
   background: var(--white);
   box-shadow: 0 10px 26px rgba(20, 37, 29, 0.06);
+}
+
+.product-card .button {
+  width: 100%;
+  min-height: 48px;
+  align-self: end;
 }
 
 .product-thumb {
@@ -1242,6 +1249,10 @@ h3 {
   font-weight: 900;
 }
 
+.modal-error {
+  color: #ee4d42;
+}
+
 .modal-add {
   width: 100%;
   text-transform: uppercase;
@@ -1404,7 +1415,7 @@ h3 {
 }
 
 .admin-row button:last-child,
-.admin-products article > button {
+.admin-product-actions button:last-child {
   background: #ee4d42;
 }
 
@@ -1419,6 +1430,14 @@ h3 {
 .admin-field small {
   color: var(--muted);
   font-weight: 500;
+}
+
+.admin-edit-product-form {
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdfb;
+  padding: 16px;
 }
 
 .admin-products article {
@@ -1448,12 +1467,19 @@ h3 {
   color: var(--muted);
 }
 
-.admin-products article > button {
+.admin-product-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-product-actions button {
   border: 0;
   border-radius: 6px;
+  background: var(--green);
   color: var(--white);
   padding: 10px 14px;
   font-weight: 900;
+  cursor: pointer;
 }
 
 .admin-field {
