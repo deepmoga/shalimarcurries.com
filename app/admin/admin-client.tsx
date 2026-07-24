@@ -39,9 +39,18 @@ type AdminOrder = {
     zipcode: string;
     suburb?: string;
     time?: string;
+    notes?: string;
   };
-  items: Array<{ name?: string; quantity?: number; price?: number }>;
+  items: Array<{
+    name?: string;
+    quantity?: number;
+    price?: number;
+    productId?: string;
+    size?: { name?: string; extra?: number };
+    spice?: string;
+  }>;
   total: number;
+  snapshot?: unknown;
 };
 
 type ProductFormState = {
@@ -880,6 +889,8 @@ function Stat({
 }
 
 function OrdersPanel({ orders, compact = false }: { orders: AdminOrder[]; compact?: boolean }) {
+  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+
   return (
     <section className="admin-card">
       <div className="admin-card-header">
@@ -898,6 +909,7 @@ function OrdersPanel({ orders, compact = false }: { orders: AdminOrder[]; compac
               <th>Time</th>
               <th>Total</th>
               <th>Status</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -918,17 +930,111 @@ function OrdersPanel({ orders, compact = false }: { orders: AdminOrder[]; compac
                   <td>
                     <span className="order-status">{order.status}</span>
                   </td>
+                  <td>
+                    <button
+                      className="admin-view-button"
+                      type="button"
+                      onClick={() => setSelectedOrder(order)}
+                    >
+                      View
+                    </button>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={6}>No orders yet.</td>
+                <td colSpan={7}>No orders yet.</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      {selectedOrder ? (
+        <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+      ) : null}
     </section>
+  );
+}
+
+function OrderDetailsModal({ order, onClose }: { order: AdminOrder; onClose: () => void }) {
+  return (
+    <div className="modal-backdrop admin-order-backdrop" role="dialog" aria-modal="true" aria-label="Order details">
+      <div className="admin-order-modal">
+        <div className="admin-card-header">
+          <div>
+            <p>Order Details</p>
+            <h2>#{order.id.slice(0, 8)}</h2>
+          </div>
+          <button className="admin-view-button" type="button" onClick={onClose}>
+            Close
+          </button>
+        </div>
+
+        <div className="admin-order-detail-grid">
+          <div>
+            <span>Customer</span>
+            <strong>{order.details.name}</strong>
+            <small>{order.details.phone}</small>
+          </div>
+          <div>
+            <span>Order Type</span>
+            <strong>{order.details.mode}</strong>
+            <small>{order.details.time || "No time selected"}</small>
+          </div>
+          <div>
+            <span>Address</span>
+            <strong>{order.details.address || "-"}</strong>
+            <small>
+              {[order.details.suburb, order.details.zipcode].filter(Boolean).join(" ") || "-"}
+            </small>
+          </div>
+          <div>
+            <span>Status</span>
+            <strong>{order.status}</strong>
+            <small>{new Date(order.createdAt).toLocaleString()}</small>
+          </div>
+        </div>
+
+        {order.details.notes ? (
+          <div className="admin-order-notes">
+            <span>Order Notes</span>
+            <p>{order.details.notes}</p>
+          </div>
+        ) : null}
+
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Options</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.items.map((item, index) => (
+                <tr key={`${item.productId || item.name}-${index}`}>
+                  <td>{item.name || "Item"}</td>
+                  <td>
+                    {[item.size?.name, item.spice].filter(Boolean).join(", ") || "-"}
+                  </td>
+                  <td>{item.quantity || 1}</td>
+                  <td>{money(Number(item.price || 0))}</td>
+                  <td>{money(Number(item.price || 0) * Number(item.quantity || 1))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="admin-order-total">
+          <span>Total</span>
+          <strong>{money(order.total)}</strong>
+        </div>
+      </div>
+    </div>
   );
 }
 

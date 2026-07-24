@@ -44,6 +44,7 @@ CREATE TABLE orders (
   notes TEXT,
   items JSON NOT NULL,
   total DECIMAL(10,2) NOT NULL,
+  order_snapshot JSON,
   status VARCHAR(40) NOT NULL DEFAULT 'new',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

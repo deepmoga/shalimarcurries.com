@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { getDb, query } from "@/lib/db";
 import type { CheckoutDetails, MenuStore } from "@/lib/menu-types";
 
+let orderSnapshotColumnReady = false;
+
 function parseJson<T>(value: unknown, fallback: T): T {
   if (value === null || value === undefined || value === "") {
     return fallback;
@@ -18,6 +20,34 @@ function normalizeOrderOptions(value: unknown) {
     delivery: options.delivery !== false,
     pickup: options.pickup !== false
   };
+}
+
+function isDuplicateColumnError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "ER_DUP_FIELDNAME"
+  );
+}
+
+async function ensureOrderSnapshotColumn() {
+  if (orderSnapshotColumnReady) {
+    return true;
+  }
+
+  try {
+    await query("ALTER TABLE orders ADD COLUMN order_snapshot JSON NULL AFTER total");
+    orderSnapshotColumnReady = true;
+    return true;
+  } catch (error) {
+    if (isDuplicateColumnError(error)) {
+      orderSnapshotColumnReady = true;
+      return true;
+    }
+    console.error("Could not prepare order snapshot column", error);
+    return false;
+  }
 }
 
 export async function readMenuStore(): Promise<MenuStore> {
@@ -128,12 +158,46 @@ export async function createOrder(order: {
   total: number;
 }) {
   const createdAt = new Date();
+  const hasOrderSnapshot = await ensureOrderSnapshotColumn();
   const record = {
     id: randomUUID(),
     status: "new",
     createdAt: createdAt.toISOString(),
     ...order
   };
+  const snapshot = {
+    id: record.id,
+    status: record.status,
+    createdAt: record.createdAt,
+    details: order.details,
+    items: order.items,
+    total: order.total
+  };
+  if (hasOrderSnapshot) {
+    await query(
+      `INSERT INTO orders
+        (id, mode, customer_name, phone, address, zipcode, suburb, delivery_time, notes, items, total, order_snapshot, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        record.id,
+        order.details.mode,
+        order.details.name,
+        order.details.phone,
+        order.details.address,
+        order.details.zipcode,
+        order.details.suburb ?? "",
+        order.details.time ?? "",
+        order.details.notes ?? "",
+        JSON.stringify(order.items),
+        order.total,
+        JSON.stringify(snapshot),
+        record.status,
+        createdAt
+      ]
+    );
+    return record;
+  }
+
   await query(
     `INSERT INTO orders
       (id, mode, customer_name, phone, address, zipcode, suburb, delivery_time, notes, items, total, status, created_at)
@@ -158,6 +222,7 @@ export async function createOrder(order: {
 }
 
 export async function readOrders() {
+  const hasOrderSnapshot = await ensureOrderSnapshotColumn();
   const rows = await query<{
     id: string;
     mode: "delivery" | "pickup";
@@ -170,19 +235,18 @@ export async function readOrders() {
     notes: string | null;
     items: unknown;
     total: string | number;
+    order_snapshot?: unknown;
     status: string;
     created_at: Date | string;
   }>(
-    `SELECT id, mode, customer_name, phone, address, zipcode, suburb, delivery_time, notes, items, total, status, created_at
+    `SELECT id, mode, customer_name, phone, address, zipcode, suburb, delivery_time, notes, items, total, ${hasOrderSnapshot ? "order_snapshot," : ""} status, created_at
      FROM orders ORDER BY created_at DESC`
   );
 
-  return rows.map((row) => ({
-    id: row.id,
-    status: row.status,
-    createdAt:
-      row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
-    details: {
+  return rows.map((row) => {
+    const createdAt =
+      row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at);
+    const details = {
       mode: row.mode,
       name: row.customer_name,
       phone: row.phone,
@@ -191,10 +255,29 @@ export async function readOrders() {
       suburb: row.suburb ?? "",
       time: row.delivery_time ?? "",
       notes: row.notes ?? ""
-    },
-    items: parseJson(row.items, []),
-    total: Number(row.total)
-  }));
+    };
+    const items = parseJson(row.items, []);
+    const total = Number(row.total);
+
+    return {
+      id: row.id,
+      status: row.status,
+      createdAt,
+      details,
+      items,
+      total,
+      snapshot:
+        parseJson(row.order_snapshot, null) ??
+        {
+          id: row.id,
+          status: row.status,
+          createdAt,
+          details,
+          items,
+          total
+        }
+    };
+  });
 }
 
 export function slugify(value: string) {

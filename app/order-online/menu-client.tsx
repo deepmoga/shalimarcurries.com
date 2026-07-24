@@ -41,10 +41,9 @@ function spiceOptionsFor(product: MenuProduct) {
   if (!product.spiceOptions.length) {
     return [];
   }
-  const options = ["Normal", ...product.spiceOptions];
-  return options.filter((option, index) => {
+  return product.spiceOptions.filter((option, index) => {
     const key = option.toLowerCase();
-    return option && options.findIndex((item) => item.toLowerCase() === key) === index;
+    return option && key !== "normal" && product.spiceOptions.findIndex((item) => item.toLowerCase() === key) === index;
   });
 }
 

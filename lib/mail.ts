@@ -16,6 +16,10 @@ function orderTotal(items: CartItem[]) {
   return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 }
 
+function shortOrderId(orderId: string) {
+  return orderId.slice(0, 8).toUpperCase();
+}
+
 function escapeHtml(value = "") {
   return value
     .replaceAll("&", "&amp;")
@@ -77,6 +81,14 @@ function createTransport(settings: SiteSettings) {
   });
 }
 
+function senderAddress(settings: SiteSettings) {
+  return settings.mail.username || settings.mail.fromEmail;
+}
+
+function fromHeader(settings: SiteSettings) {
+  return `"${settings.branding.siteName}" <${senderAddress(settings)}>`;
+}
+
 function renderOrderRows(items: CartItem[]) {
   return items
     .map((item) => {
@@ -89,6 +101,41 @@ function renderOrderRows(items: CartItem[]) {
       </tr>`;
     })
     .join("");
+}
+
+function renderOrderText({
+  orderId,
+  details,
+  items,
+  total
+}: {
+  orderId: string;
+  details: CheckoutDetails;
+  items: CartItem[];
+  total: number;
+}) {
+  const itemLines = items
+    .map((item) => {
+      const options = [item.size?.name, item.spice].filter(Boolean).join(", ");
+      return `- ${item.quantity} x ${item.name}${options ? ` (${options})` : ""}: ${money(item.price * item.quantity)}`;
+    })
+    .join("\n");
+
+  return [
+    `New ${details.mode} order #${shortOrderId(orderId)}`,
+    `Order ID: ${orderId}`,
+    `Time: ${details.time || "Not selected"}`,
+    `Customer: ${details.name}`,
+    `Phone: ${details.phone}`,
+    `Address: ${[details.address, details.suburb, details.zipcode].filter(Boolean).join(", ")}`,
+    details.notes ? `Notes: ${details.notes}` : "",
+    "",
+    itemLines,
+    "",
+    `Total: ${money(total)}`
+  ]
+    .filter((line) => line !== "")
+    .join("\n");
 }
 
 export async function sendOrderEmails({
@@ -130,10 +177,23 @@ export async function sendOrderEmails({
 
   try {
     const info = await createTransport(settings).sendMail({
-      from: `"${settings.branding.siteName}" <${settings.mail.fromEmail}>`,
+      from: fromHeader(settings),
+      sender: senderAddress(settings),
+      envelope: {
+        from: senderAddress(settings),
+        to: settings.mail.adminEmail
+      },
       to: settings.mail.adminEmail,
-      subject: `New order ${orderId} - ${money(total)}`,
-      html
+      replyTo:
+        settings.mail.fromEmail && settings.mail.fromEmail !== senderAddress(settings)
+          ? settings.mail.fromEmail
+          : undefined,
+      subject: `${settings.branding.siteName}: New ${details.mode} order #${shortOrderId(orderId)} (${money(total)})`,
+      text: renderOrderText({ orderId, details, items, total }),
+      html,
+      headers: {
+        "X-Entity-Ref-ID": orderId
+      }
     });
     return { ok: true, messageId: info.messageId };
   } catch (error) {
@@ -174,7 +234,12 @@ export async function sendReservationEmail({
 
   try {
     const info = await createTransport(settings).sendMail({
-      from: `"${settings.branding.siteName}" <${settings.mail.fromEmail}>`,
+      from: fromHeader(settings),
+      sender: senderAddress(settings),
+      envelope: {
+        from: senderAddress(settings),
+        to: settings.mail.adminEmail
+      },
       to: settings.mail.adminEmail,
       replyTo: email || undefined,
       subject: `New enquiry from ${name}`,
@@ -201,7 +266,12 @@ export async function sendTestEmail(): Promise<MailResult> {
     const transporter = createTransport(settings);
     await transporter.verify();
     const info = await transporter.sendMail({
-      from: `"${settings.branding.siteName}" <${settings.mail.fromEmail}>`,
+      from: fromHeader(settings),
+      sender: senderAddress(settings),
+      envelope: {
+        from: senderAddress(settings),
+        to: settings.mail.adminEmail
+      },
       to: settings.mail.adminEmail,
       subject: "Shalimar Curries test email",
       html
