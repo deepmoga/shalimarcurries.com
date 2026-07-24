@@ -25,6 +25,8 @@ export default function CheckoutClient({ recaptchaSiteKey }: { recaptchaSiteKey:
   const [suburb, setSuburb] = useState("");
   const [time, setTime] = useState("");
   const [status, setStatus] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOrderReceived, setShowOrderReceived] = useState(false);
   const total = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
     [items]
@@ -49,6 +51,10 @@ export default function CheckoutClient({ recaptchaSiteKey }: { recaptchaSiteKey:
 
   async function submitOrder(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setStatus("");
     const form = new FormData(event.currentTarget);
     const captchaToken = window.grecaptcha?.getResponse() || "";
     const details: CheckoutDetails = {
@@ -62,30 +68,36 @@ export default function CheckoutClient({ recaptchaSiteKey }: { recaptchaSiteKey:
       notes: String(form.get("notes") ?? "")
     };
 
-    const response = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ details, items, captchaToken })
-    });
-    const data = (await response.json().catch(() => null)) as
-      | { error?: string; mail?: { ok?: boolean; error?: string } }
-      | null;
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ details, items, captchaToken })
+      });
+      const data = (await response.json().catch(() => null)) as
+        | { error?: string; mail?: { ok?: boolean; error?: string } }
+        | null;
 
-    if (!response.ok) {
+      if (!response.ok) {
+        window.grecaptcha?.reset();
+        setStatus(data?.error || "Please check the order details and try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      window.localStorage.removeItem(cartKey);
+      window.localStorage.removeItem(checkoutKey);
       window.grecaptcha?.reset();
-      setStatus(data?.error || "Please check the order details and try again.");
-      return;
+      setItems([]);
+      setShowOrderReceived(true);
+      if (data?.mail?.ok === false) {
+        setStatus(`Your order has been received, but email was not sent: ${data.mail.error}`);
+      }
+    } catch {
+      setStatus("Please check the order details and try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    window.localStorage.removeItem(cartKey);
-    window.localStorage.removeItem(checkoutKey);
-    window.grecaptcha?.reset();
-    setItems([]);
-    setStatus(
-      data?.mail?.ok === false
-        ? `Your order has been received, but email was not sent: ${data.mail.error}`
-        : "Thank you. Your order has been received."
-    );
   }
 
   return (
@@ -123,8 +135,19 @@ export default function CheckoutClient({ recaptchaSiteKey }: { recaptchaSiteKey:
             <div className="captcha-field full-field">
               <div className="g-recaptcha" data-sitekey={recaptchaSiteKey} />
             </div>
-            <button className="button button-green full-field" type="submit" disabled={!items.length}>
-              Place Order
+            <button
+              className="button button-green full-field checkout-submit-button"
+              type="submit"
+              disabled={!items.length || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="button-spinner" aria-hidden="true" />
+                  <span>Placing order...</span>
+                </>
+              ) : (
+                "Place Order"
+              )}
             </button>
             {status ? <p className="form-status">{status}</p> : null}
           </form>
@@ -155,6 +178,20 @@ export default function CheckoutClient({ recaptchaSiteKey }: { recaptchaSiteKey:
           </aside>
         </div>
       </section>
+      {showOrderReceived ? (
+        <div className="sweet-alert-backdrop" role="dialog" aria-modal="true" aria-label="Order received">
+          <div className="sweet-alert-box">
+            <div className="sweet-alert-success" aria-hidden="true">
+              <span />
+            </div>
+            <h2>Order Received</h2>
+            <p>Thank you. Your order has been received.</p>
+            <a className="button button-green" href="/order-online">
+              Back to Menu Page
+            </a>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
