@@ -38,7 +38,10 @@ export async function POST(request: Request) {
   }
 
   const menu = await readMenuStore();
-  if (menu.openingDays?.[perthDayName()] === false) {
+  const today = perthDayName();
+  const availableTimes = menu.timeSlots[today] ?? [];
+
+  if (menu.openingDays?.[today] === false) {
     return NextResponse.json(
       { error: "Restaurant is closed today. Please order on the next open day." },
       { status: 400 }
@@ -52,6 +55,13 @@ export async function POST(request: Request) {
   if (!modeEnabled) {
     return NextResponse.json(
       { error: `${selectedMode === "delivery" ? "Delivery" : "Pickup"} ordering is currently unavailable.` },
+      { status: 400 }
+    );
+  }
+
+  if (!body.details.time || !availableTimes.includes(body.details.time)) {
+    return NextResponse.json(
+      { error: "Please select a valid ordering time for today." },
       { status: 400 }
     );
   }
