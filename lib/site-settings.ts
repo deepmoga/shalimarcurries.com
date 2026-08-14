@@ -15,6 +15,7 @@ export type SiteSettings = {
     address: string;
     facebook: string;
     instagram: string;
+    openingHours: string;
   };
   mail: {
     enabled: boolean;

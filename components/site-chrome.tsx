@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  Clock,
   Mail,
   MapPin,
   Menu,
@@ -8,6 +9,7 @@ import {
   Utensils
 } from "lucide-react";
 import { siteContent } from "@/content/home";
+import { readSiteSettings } from "@/lib/site-settings";
 
 function FacebookIcon({ size = 16 }: { size?: number }) {
   return (
@@ -125,8 +127,9 @@ export function PageHero({
   );
 }
 
-export function SiteFooter() {
+export async function SiteFooter() {
   const { business, nav } = siteContent;
+  const settings = await readSiteSettings();
   const facebookPluginUrl = `https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(
     business.facebook
   )}&tabs=timeline&width=360&height=260&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`;
@@ -173,6 +176,10 @@ export function SiteFooter() {
             <li>
               <MapPin size={17} aria-hidden="true" />
               <a href={business.mapUrl}>{business.address}</a>
+            </li>
+            <li>
+              <Clock size={17} aria-hidden="true" />
+              <span>{settings.contact.openingHours}</span>
             </li>
           </ul>
         </div>

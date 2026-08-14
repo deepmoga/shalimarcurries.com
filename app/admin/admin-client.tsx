@@ -1219,6 +1219,18 @@ function SettingsPanel({
               }
             />
           </label>
+          <label className="full-field">
+            <span>Opening Hours</span>
+            <input
+              value={settings.contact.openingHours || ""}
+              onChange={(event) =>
+                setSettings({
+                  ...settings,
+                  contact: { ...settings.contact, openingHours: event.target.value }
+                })
+              }
+            />
+          </label>
         </div>
       </div>
 

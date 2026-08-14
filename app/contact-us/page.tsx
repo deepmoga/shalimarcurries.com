@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { PageHero, SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { siteContent } from "@/content/home";
+import { readSiteSettings } from "@/lib/site-settings";
 import { recaptchaSiteKey } from "@/lib/recaptcha-config";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default async function ContactPage({
   searchParams?: Promise<{ sent?: string; error?: string; mailError?: string }>;
 }) {
   const { business } = siteContent;
+  const settings = await readSiteSettings();
   const params = await searchParams;
   const formStatus =
     params?.sent === "1"
@@ -61,6 +63,13 @@ export default async function ContactPage({
                     {business.phone}
                   </span>
                 </a>
+                <div className="contact-info-block" style={{ display: "flex", gap: "1.2rem", alignItems: "flex-start", color: "var(--foreground)", textDecoration: "none" }}>
+                  <Clock size={28} aria-hidden="true" style={{ color: "var(--primary)" }} />
+                  <span style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+                    <small style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)", fontWeight: 600 }}>Opening Hours</small>
+                    <span style={{ fontSize: "1.1rem", fontWeight: 500 }}>{settings.contact.openingHours}</span>
+                  </span>
+                </div>
               </div>
             </div>
             <form className="contact-form" action="/api/reservations" method="post">
