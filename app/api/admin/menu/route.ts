@@ -24,6 +24,7 @@ export async function PUT(request: Request) {
       products: store.products,
       suburbs: store.suburbs,
       timeSlots: store.timeSlots,
+      openingDays: store.openingDays,
       orderOptions: store.orderOptions
     });
 

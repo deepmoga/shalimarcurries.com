@@ -7,6 +7,7 @@ import type { CartItem, MenuProduct, MenuStore, OrderMode, SizeOption } from "@/
 
 const cartKey = "shalimar-cart";
 const checkoutKey = "shalimar-checkout";
+const emptyTimeSlots: string[] = [];
 
 function money(value: number) {
   return `$${value.toFixed(2)}`;
@@ -48,7 +49,10 @@ function spiceOptionsFor(product: MenuProduct) {
 }
 
 function todayName() {
-  return new Intl.DateTimeFormat("en-AU", { weekday: "long" }).format(new Date());
+  return new Intl.DateTimeFormat("en-AU", {
+    weekday: "long",
+    timeZone: "Australia/Perth"
+  }).format(new Date());
 }
 
 export default function MenuClient() {
@@ -85,10 +89,13 @@ export default function MenuClient() {
     return store?.products.filter((product) => product.categoryId === activeCategory) ?? [];
   }, [activeCategory, store]);
 
-  const timeSlots = store?.timeSlots[todayName()] ?? Object.values(store?.timeSlots ?? {})[0] ?? [];
+  const today = todayName();
+  const isRestaurantOpen = store?.openingDays?.[today] !== false;
+  const timeSlots = isRestaurantOpen ? store?.timeSlots[today] ?? emptyTimeSlots : emptyTimeSlots;
   const orderOptions = store?.orderOptions ?? { delivery: true, pickup: true };
   const hasOrderingOption = orderOptions.delivery || orderOptions.pickup;
   const currentModeAvailable = (mode === "delivery" && orderOptions.delivery) || (mode === "pickup" && orderOptions.pickup);
+  const selectedTimeAvailable = isRestaurantOpen && Boolean(time) && timeSlots.includes(time);
 
   function addConfiguredProduct(product: MenuProduct, options?: { size?: SizeOption; spice?: string; quantity?: number }) {
     const sizeExtra = options?.size?.extra ?? 0;
@@ -128,6 +135,9 @@ export default function MenuClient() {
   }
 
   function proceedToCheckout() {
+    if (!selectedTimeAvailable) {
+      return;
+    }
     window.localStorage.setItem(
       checkoutKey,
       JSON.stringify({ mode, suburb, time, items: cart })
@@ -230,6 +240,9 @@ export default function MenuClient() {
               {!hasOrderingOption ? (
                 <p className="empty-cart">Online ordering is currently unavailable.</p>
               ) : null}
+              {hasOrderingOption && !isRestaurantOpen ? (
+                <p className="empty-cart">Restaurant is closed today. Please order on the next open day.</p>
+              ) : null}
               {mode === "delivery" && orderOptions.delivery ? (
               <label>
                 <span>Suburb *</span>
@@ -242,8 +255,12 @@ export default function MenuClient() {
               ) : null}
               <label>
                 <span>{mode === "delivery" ? "Delivery Time *" : "Pickup Time *"}</span>
-                <select value={time} onChange={(event) => setTime(event.target.value)}>
-                  <option value="">Select time...</option>
+                <select
+                  value={time}
+                  disabled={!isRestaurantOpen}
+                  onChange={(event) => setTime(event.target.value)}
+                >
+                  <option value="">{isRestaurantOpen ? "Select time..." : "Closed today"}</option>
                   {timeSlots.map((slot) => (
                     <option key={slot}>{slot}</option>
                   ))}
@@ -289,7 +306,7 @@ export default function MenuClient() {
               <button
                 className="button button-green checkout-button"
                 type="button"
-                disabled={!cart.length || !time || !currentModeAvailable || (mode === "delivery" && !suburb)}
+                disabled={!cart.length || !selectedTimeAvailable || !currentModeAvailable || (mode === "delivery" && !suburb)}
                 onClick={proceedToCheckout}
               >
                 Proceed to Checkout

@@ -25,6 +25,16 @@ const defaultTimeSlots = {
   Saturday: ["17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00"]
 };
 
+const defaultOpeningDays = {
+  Sunday: true,
+  Monday: false,
+  Tuesday: true,
+  Wednesday: true,
+  Thursday: true,
+  Friday: true,
+  Saturday: true
+};
+
 const defaultSettings = JSON.parse(
   await readFile(path.join(process.cwd(), "data", "site-settings.json"), "utf8")
 );
@@ -214,6 +224,20 @@ try {
      VALUES ('site', ?)
      ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
     [JSON.stringify(defaultSettings)]
+  );
+
+  await connection.execute(
+    `INSERT INTO app_settings (setting_key, setting_value)
+     VALUES ('opening_days', ?)
+     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+    [JSON.stringify(defaultOpeningDays)]
+  );
+
+  await connection.execute(
+    `INSERT INTO app_settings (setting_key, setting_value)
+     VALUES ('order_options', ?)
+     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+    [JSON.stringify({ delivery: true, pickup: true })]
   );
 
   await connection.commit();

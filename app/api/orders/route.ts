@@ -11,6 +11,13 @@ function cartTotal(items: CartItem[]) {
   return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 }
 
+function perthDayName() {
+  return new Intl.DateTimeFormat("en-AU", {
+    weekday: "long",
+    timeZone: "Australia/Perth"
+  }).format(new Date());
+}
+
 export async function POST(request: Request) {
   const body = (await request.json()) as {
     details: CheckoutDetails;
@@ -31,6 +38,13 @@ export async function POST(request: Request) {
   }
 
   const menu = await readMenuStore();
+  if (menu.openingDays?.[perthDayName()] === false) {
+    return NextResponse.json(
+      { error: "Restaurant is closed today. Please order on the next open day." },
+      { status: 400 }
+    );
+  }
+
   const selectedMode = body.details.mode;
   const modeEnabled =
     (selectedMode === "delivery" && menu.orderOptions.delivery) ||

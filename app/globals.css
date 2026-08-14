@@ -1645,6 +1645,37 @@ h3 {
   gap: 16px;
 }
 
+.admin-day-card {
+  display: grid;
+  gap: 14px;
+  border: 1px solid #dfe8e2;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fff;
+}
+
+.admin-day-card.closed {
+  background: #f5f7f5;
+}
+
+.admin-day-card-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-day-card-header strong {
+  color: var(--green-dark);
+  font-size: 1rem;
+}
+
+.admin-day-card input:disabled {
+  background: #eef2ef;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
 .admin-login-page {
   min-height: 100vh;
   display: grid;

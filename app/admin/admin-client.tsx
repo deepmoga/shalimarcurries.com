@@ -807,26 +807,52 @@ export default function AdminClient() {
               <small>One suburb per line.</small>
             </label>
             <div className="time-slot-grid">
-              {days.map((day) => (
-                <label key={day}>
-                  <span>{day}</span>
-                  <input
-                    value={(store.timeSlots[day] ?? []).join(", ")}
-                    onChange={(event) =>
-                      setStore({
-                        ...store,
-                        timeSlots: {
-                          ...store.timeSlots,
-                          [day]: event.target.value
-                            .split(",")
-                            .map((item) => item.trim())
-                            .filter(Boolean)
+              {days.map((day) => {
+                const isOpen = store.openingDays?.[day] !== false;
+
+                return (
+                  <div className={`admin-day-card ${isOpen ? "" : "closed"}`} key={day}>
+                    <div className="admin-day-card-header">
+                      <strong>{day}</strong>
+                      <select
+                        value={isOpen ? "open" : "closed"}
+                        onChange={(event) =>
+                          setStore({
+                            ...store,
+                            openingDays: {
+                              ...store.openingDays,
+                              [day]: event.target.value === "open"
+                            }
+                          })
                         }
-                      })
-                    }
-                  />
-                </label>
-              ))}
+                      >
+                        <option value="open">Open</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    </div>
+                    <label>
+                      <span>Time Slots</span>
+                      <input
+                        disabled={!isOpen}
+                        value={(store.timeSlots[day] ?? []).join(", ")}
+                        placeholder={isOpen ? "17:00, 17:30, 18:00" : "Closed"}
+                        onChange={(event) =>
+                          setStore({
+                            ...store,
+                            timeSlots: {
+                              ...store.timeSlots,
+                              [day]: event.target.value
+                                .split(",")
+                                .map((item) => item.trim())
+                                .filter(Boolean)
+                            }
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                );
+              })}
             </div>
           </section>
         ) : null}

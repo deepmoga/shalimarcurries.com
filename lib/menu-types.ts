@@ -25,6 +25,7 @@ export type MenuStore = {
   products: MenuProduct[];
   suburbs: string[];
   timeSlots: Record<string, string[]>;
+  openingDays: Record<string, boolean>;
   orderOptions: {
     delivery: boolean;
     pickup: boolean;
